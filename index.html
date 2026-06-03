@@ -49,7 +49,7 @@
         const tg = window.Telegram.WebApp;
         tg.ready(); tg.expand();
 
-        // ОБЯЗАТЕЛЬНО ВСТАВЬ СВОЮ ССЫЛКУ ИЗ NGROK / LOCALTUNNEL СЮДА:
+        // Твоя активная ссылка localtunnel:
         const API_URL = 'https://tricky-humans-throw.loca.lt'; 
         const userId = tg.initDataUnsafe?.user?.id || 12345; 
         let currentLot = null;
@@ -76,7 +76,6 @@
                         document.getElementById('lot-timer').innerText = "Завершен";
                         document.getElementById('action-zone').classList.add('hidden');
                         
-                        // Если этот пользователь выиграл и еще не оплатил комиссию
                         if (currentLot.winnerId === userId && currentLot.status !== 'paid') {
                             document.getElementById('pay-zone').classList.remove('hidden');
                         }
@@ -105,7 +104,6 @@
                 alert(data.error);
             } else {
                 alert(isBlitz ? 'Лот успешно выкуплен по Блицу!' : 'Ставка принята!');
-                // Даем серверу секунду обновиться и перезагружаем лот
                 setTimeout(loadLot, 500); 
             }
         }
