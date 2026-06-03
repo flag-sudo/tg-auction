@@ -12,6 +12,7 @@
         <h1 class="text-2xl font-bold text-center text-yellow-500 mb-4">🔨 RSIZ Auction</h1>
 
         <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700 shadow-2xl">
+            <!-- БЛОК ИЗОБРАЖЕНИЯ ЛОТА -->
             <div class="relative w-full h-56 bg-gray-950 flex items-center justify-center overflow-hidden">
                 <img id="lot-img" src="" alt="Лот" class="w-full h-full object-cover opacity-90">
                 <div class="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md text-xs px-2.5 py-1 rounded-full flex items-center gap-1">
@@ -19,10 +20,12 @@
                 </div>
             </div>
 
+            <!-- ИНФОРМАЦИЯ О ЛОТЕ -->
             <div class="p-4">
                 <h2 id="lot-title" class="text-xl font-bold text-white tracking-tight">Загрузка...</h2>
                 <p id="lot-desc" class="text-gray-400 text-sm mt-2 leading-relaxed bg-gray-900/40 p-3 rounded-lg border border-gray-700/50">...</p>
                 
+                <!-- ПЛАШКА СТАВКИ И ТАЙМЕРА -->
                 <div class="flex justify-between items-center mt-4 bg-gray-700/60 backdrop-blur-sm p-3 rounded-xl border border-gray-600/30">
                     <div>
                         <span class="text-xs text-gray-400 block uppercase font-medium tracking-wider">Текущая ставка</span>
@@ -39,8 +42,10 @@
                     </div>
                 </div>
 
+                <!-- БЛОК УПРАВЛЕНИЯ ТОРГАМИ -->
                 <div id="action-zone" class="mt-4 space-y-4">
                     
+                    <!-- 1. РУЧНАЯ СТАВКА -->
                     <div class="bg-gray-900/40 p-3 rounded-xl border border-gray-700/60">
                         <label class="text-xs text-gray-400 font-semibold block mb-1.5 uppercase">Сделать ставку вручную:</label>
                         <div class="flex gap-2">
@@ -49,6 +54,7 @@
                         </div>
                     </div>
 
+                    <!-- 2. АВТОТОРГ -->
                     <div class="bg-gray-900/40 p-3 rounded-xl border border-gray-700/60">
                         <div class="flex justify-between items-center mb-1.5">
                             <label class="text-xs text-gray-400 font-semibold block uppercase">Автоторг (Proxy Bidding):</label>
@@ -60,9 +66,11 @@
                         </div>
                     </div>
 
+                    <!-- КНОПКА БЛИЦ -->
                     <button onclick="placeBlitzBid()" class="w-full bg-red-600 text-white font-bold py-3 rounded-xl text-sm tracking-wide transition-all active:scale-[0.98] hover:bg-red-700">⚡ Купить сейчас (Блиц)</button>
                 </div>
 
+                <!-- БЛОК ОПЛАТЫ -->
                 <div id="pay-zone" class="mt-4 hidden text-center bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl">
                     <p class="text-yellow-400 text-sm mb-3 font-medium">🎉 Поздравляем, вы победили! Оплатите комиссию, чтобы забрать лот:</p>
                     <button onclick="payCommission()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-extrabold py-3.5 rounded-xl shadow-lg">🌟 Оплатить звездами</button>
@@ -75,8 +83,9 @@
         const tg = window.Telegram.WebApp;
         tg.ready(); tg.expand();
 
-        // ТВОЯ АКТУАЛЬНАЯ ССЫЛКА НА СЕРВЕР:
+        // ⚠️ ВАЖНО: ЗАМЕНИ ЭТУ ССЫЛКУ НА ТУ, ЧТО СЕЙЧАС ГОРИТ В ТЕРМИНАЛЕ ТУННЕЛЯ!
         const API_URL = 'https://two-bottles-sort.loca.lt'; 
+        
         const userId = tg.initDataUnsafe?.user?.id || 12345; 
         let currentLot = null;
         let timerInterval = null;
@@ -96,10 +105,8 @@
                 document.getElementById('lot-location').innerText = currentLot.location;
                 document.getElementById('lot-img').src = currentLot.imageUrl;
 
-                // Подсказываем в поле ввода рекомендуемую минимальную ставку
                 document.getElementById('bid-input').placeholder = `>= ${currentLot.currentBid + currentLot.minStep}`;
 
-                // Отображаем статус автоторга для текущего пользователя, если он настроен
                 if (currentLot.autoBids && currentLot.autoBids[userId]) {
                     document.getElementById('my-auto-status').innerText = `Лимит: ${currentLot.autoBids[userId]} грн`;
                     document.getElementById('my-auto-status').classList.remove('text-gray-500');
@@ -127,15 +134,12 @@
             } catch(e) { console.log("Ошибка подключения к бэкенду."); }
         }
 
-        // Вызов обычной ставки
         async function placeBid() {
             let amount = parseInt(document.getElementById('bid-input').value);
             if (!amount) return alert('Введите сумму ставки');
-            
             sendBidRequest(amount);
         }
 
-        // Вызов блиц-выкупа
         async function placeBlitzBid() {
             sendBidRequest(currentLot.blitzPrice);
         }
@@ -156,7 +160,6 @@
             }
         }
 
-        // Настройка автоторга
         async function setupAutoBid() {
             let maxLimit = parseInt(document.getElementById('auto-input').value);
             if (!maxLimit) return alert('Укажите максимальный лимит для автоторга');
@@ -170,7 +173,7 @@
             if (data.error) {
                 alert(data.error);
             } else {
-                alert('Автоторг успешно активирован! Робот начнет торговать за вас.');
+                alert('Автоторг успешно активирован!');
                 document.getElementById('auto-input').value = '';
                 loadLot();
             }
