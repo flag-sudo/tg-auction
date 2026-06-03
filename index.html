@@ -15,10 +15,12 @@
             <h2 id="lot-title" class="text-xl font-semibold">Загрузка...</h2>
             <p id="lot-desc" class="text-gray-400 text-sm mt-1">...</p>
             
+            <!-- Информационная плашка цены и таймера -->
             <div class="flex justify-between items-center mt-4 bg-gray-700 p-3 rounded-lg">
                 <div>
                     <span class="text-xs text-gray-400 block">Текущая ставка</span>
                     <span id="lot-price" class="text-xl font-bold text-green-400">0 грн</span>
+                    <span id="lot-blitz" class="text-xs text-yellow-400 block mt-1">Блиц: 0 грн</span>
                 </div>
                 <div class="text-right">
                     <span class="text-xs text-gray-400 block">До конца</span>
@@ -26,11 +28,16 @@
                 </div>
             </div>
 
+            <!-- Блок обычных ставок -->
             <div id="action-zone" class="mt-5">
                 <input type="number" id="bid-input" class="w-full bg-gray-900 border border-gray-600 rounded-lg p-2 text-center text-lg text-white" placeholder="Сумма в грн">
-                <button onclick="placeBid()" class="w-full mt-3 bg-yellow-500 text-gray-900 font-bold py-3 rounded-lg">Сделать ставку</button>
+                <button onclick="placeBid(false)" class="w-full mt-3 bg-yellow-500 text-gray-900 font-bold py-3 rounded-lg transition-colors hover:bg-yellow-600">Сделать ставку</button>
+                
+                <!-- Кнопка БЛИЦ -->
+                <button onclick="placeBid(true)" class="w-full mt-2 bg-red-600 text-white font-bold py-2 rounded-lg text-sm transition-colors hover:bg-red-700">⚡ Купить сейчас (Блиц)</button>
             </div>
 
+            <!-- Блок выкупа звездами для победителя -->
             <div id="pay-zone" class="mt-5 hidden text-center">
                 <p class="text-yellow-400 text-sm mb-2">Вы выиграли! Оплатите комиссию 10% для получения контакта</p>
                 <button onclick="payCommission()" class="w-full bg-blue-500 text-white font-bold py-3 rounded-lg">🌟 Оплатить звездами</button>
@@ -42,10 +49,11 @@
         const tg = window.Telegram.WebApp;
         tg.ready(); tg.expand();
 
-        // ПОКА ОСТАВЛЯЕМ ТАК, СЮДА МЫ ПОТОМ ВСТАВИМ ССЫЛКУ ИЗ NGROK:
+        // ОБЯЗАТЕЛЬНО ВСТАВЬ СВОЮ ССЫЛКУ ИЗ NGROK / LOCALTUNNEL СЮДА:
         const API_URL = 'https://tricky-humans-throw.loca.lt'; 
         const userId = tg.initDataUnsafe?.user?.id || 12345; 
         let currentLot = null;
+        let timerInterval = null;
 
         async function loadLot() {
             try {
@@ -57,13 +65,18 @@
                 document.getElementById('lot-title').innerText = currentLot.title;
                 document.getElementById('lot-desc').innerText = currentLot.description;
                 document.getElementById('lot-price').innerText = `${currentLot.currentBid} грн`;
+                document.getElementById('lot-blitz').innerText = `Блиц: ${currentLot.blitzPrice} грн`;
 
-                const interval = setInterval(() => {
+                if (timerInterval) clearInterval(timerInterval);
+
+                timerInterval = setInterval(() => {
                     const diff = currentLot.endTime - Date.now();
-                    if (diff <= 0) {
-                        clearInterval(interval);
+                    if (diff <= 0 || currentLot.status === 'finished') {
+                        clearInterval(timerInterval);
                         document.getElementById('lot-timer').innerText = "Завершен";
                         document.getElementById('action-zone').classList.add('hidden');
+                        
+                        // Если этот пользователь выиграл и еще не оплатил комиссию
                         if (currentLot.winnerId === userId && currentLot.status !== 'paid') {
                             document.getElementById('pay-zone').classList.remove('hidden');
                         }
@@ -73,19 +86,28 @@
                         document.getElementById('lot-timer').innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
                     }
                 }, 1000);
-            } catch(e) { console.log("Ошибка сети"); }
+            } catch(e) { console.log("Ошибка загрузки данных лота"); }
         }
 
-        async function placeBid() {
-            const amount = parseInt(document.getElementById('bid-input').value);
-            if (!amount) return alert('Введите сумму');
+        async function placeBid(isBlitz = false) {
+            let amount = isBlitz ? currentLot.blitzPrice : parseInt(document.getElementById('bid-input').value);
+            
+            if (!amount && !isBlitz) return alert('Введите сумму ставки');
+            
             const res = await fetch(`${API_URL}/api/bid`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ lotId: 1, userId, bidAmount: amount })
             });
             const data = await res.json();
-            if (data.error) alert(data.error); else { alert('Ставка принята!'); loadLot(); }
+            
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert(isBlitz ? 'Лот успешно выкуплен по Блицу!' : 'Ставка принята!');
+                // Даем серверу секунду обновиться и перезагружаем лот
+                setTimeout(loadLot, 500); 
+            }
         }
 
         async function payCommission() {
