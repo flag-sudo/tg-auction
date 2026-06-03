@@ -75,16 +75,24 @@
         const tg = window.Telegram.WebApp;
         tg.ready(); tg.expand();
 
-        // ⚠️ ВАЖНО: ЗАМЕНИ ЭТУ ССЫЛКУ НА СВОЮ АКТУАЛЬНУЮ ИЗ ОКНА ТЕРМИНАЛА!
+        // Твой актуальный адрес туннеля
         const API_URL = 'https://hip-carrots-double.loca.lt'; 
         
         const userId = tg.initDataUnsafe?.user?.id || 12345; 
         let currentLot = null;
         let timerInterval = null;
 
+        // Специальные заголовки, чтобы LocalTunnel не блокировал запросы изнутри Телеграма
+        const tunnelHeaders = {
+            'bypass-tunnel-reminder': 'true',
+            'Accept': 'application/json'
+        };
+
         async function loadLot() {
             try {
-                const res = await fetch(`${API_URL}/api/lots`);
+                const res = await fetch(`${API_URL}/api/lots`, {
+                    headers: tunnelHeaders
+                });
                 if (!res.ok) throw new Error(`Сервер вернул ошибку со статусом ${res.status}`);
                 
                 const text = await res.text();
@@ -92,9 +100,6 @@
                 try {
                     data = JSON.parse(text);
                 } catch(parseError) {
-                    if (text.includes("tunnel") || text.includes("Bypass") || text.includes("Click to Continue")) {
-                        throw new Error("Туннель заблокирован защитой LocalTunnel. Открой эту ссылку в обычном браузере на ПК и нажми синюю кнопку 'Click to Continue'!");
-                    }
                     throw new Error("Сервер ответил не в формате JSON. Возможно, туннель упал или адрес указан неверно.");
                 }
 
@@ -146,7 +151,7 @@
                     <div class="text-xs text-gray-400 p-2 bg-gray-900 rounded border border-gray-700">
                         <b>Адрес, прописанный в index.html:</b><br>
                         <span class="text-yellow-400 font-mono block my-1">${API_URL}</span>
-                        Убедись, что эта ссылка один в один совпадает с той, которую выдал тебе терминал!
+                        Убедись, что твой сервер на ПК запущен и этот адрес совпадает с окном localtunnel!
                     </div>
                 `;
             }
@@ -166,7 +171,10 @@
             try {
                 const res = await fetch(`${API_URL}/api/bid`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        ...tunnelHeaders,
+                        'Content-Type': 'application/json' 
+                    },
                     body: JSON.stringify({ lotId: 1, userId, bidAmount: amount })
                 });
                 const data = await res.json();
@@ -189,7 +197,10 @@
             try {
                 const res = await fetch(`${API_URL}/api/set-autobid`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        ...tunnelHeaders,
+                        'Content-Type': 'application/json' 
+                    },
                     body: JSON.stringify({ lotId: 1, userId, maxLimit })
                 });
                 const data = await res.json();
@@ -209,7 +220,10 @@
             try {
                 const res = await fetch(`${API_URL}/api/invoice`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        ...tunnelHeaders,
+                        'Content-Type': 'application/json' 
+                    },
                     body: JSON.stringify({ lotId: 1, userId })
                 });
                 const data = await res.json();
