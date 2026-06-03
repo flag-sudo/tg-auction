@@ -12,7 +12,6 @@
         <h1 class="text-2xl font-bold text-center text-yellow-500 mb-4">🔨 RSIZ Auction</h1>
 
         <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700 shadow-2xl">
-            <!-- БЛОК ИЗОБРАЖЕНИЯ ЛОТА -->
             <div class="relative w-full h-56 bg-gray-950 flex items-center justify-center overflow-hidden">
                 <img id="lot-img" src="" alt="Лот" class="w-full h-full object-cover opacity-90">
                 <div class="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md text-xs px-2.5 py-1 rounded-full flex items-center gap-1">
@@ -20,12 +19,10 @@
                 </div>
             </div>
 
-            <!-- ИНФОРМАЦИЯ О ЛОТЕ -->
             <div class="p-4">
                 <h2 id="lot-title" class="text-xl font-bold text-white tracking-tight">Загрузка...</h2>
-                <p id="lot-desc" class="text-gray-400 text-sm mt-2 leading-relaxed bg-gray-900/40 p-3 rounded-lg border border-gray-700/50">...</p>
+                <div id="lot-desc" class="text-gray-400 text-sm mt-2 leading-relaxed bg-gray-900/40 p-3 rounded-lg border border-gray-700/50">...</div>
                 
-                <!-- ПЛАШКА СТАВКИ И ТАЙМЕРА -->
                 <div class="flex justify-between items-center mt-4 bg-gray-700/60 backdrop-blur-sm p-3 rounded-xl border border-gray-600/30">
                     <div>
                         <span class="text-xs text-gray-400 block uppercase font-medium tracking-wider">Текущая ставка</span>
@@ -42,10 +39,8 @@
                     </div>
                 </div>
 
-                <!-- БЛОК УПРАВЛЕНИЯ ТОРГАМИ -->
                 <div id="action-zone" class="mt-4 space-y-4">
                     
-                    <!-- 1. РУЧНАЯ СТАВКА -->
                     <div class="bg-gray-900/40 p-3 rounded-xl border border-gray-700/60">
                         <label class="text-xs text-gray-400 font-semibold block mb-1.5 uppercase">Сделать ставку вручную:</label>
                         <div class="flex gap-2">
@@ -54,7 +49,6 @@
                         </div>
                     </div>
 
-                    <!-- 2. АВТОТОРГ -->
                     <div class="bg-gray-900/40 p-3 rounded-xl border border-gray-700/60">
                         <div class="flex justify-between items-center mb-1.5">
                             <label class="text-xs text-gray-400 font-semibold block uppercase">Автоторг (Proxy Bidding):</label>
@@ -66,11 +60,9 @@
                         </div>
                     </div>
 
-                    <!-- КНОПКА БЛИЦ -->
                     <button onclick="placeBlitzBid()" class="w-full bg-red-600 text-white font-bold py-3 rounded-xl text-sm tracking-wide transition-all active:scale-[0.98] hover:bg-red-700">⚡ Купить сейчас (Блиц)</button>
                 </div>
 
-                <!-- БЛОК ОПЛАТЫ -->
                 <div id="pay-zone" class="mt-4 hidden text-center bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl">
                     <p class="text-yellow-400 text-sm mb-3 font-medium">🎉 Поздравляем, вы победили! Оплатите комиссию, чтобы забрать лот:</p>
                     <button onclick="payCommission()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-extrabold py-3.5 rounded-xl shadow-lg">🌟 Оплатить звездами</button>
@@ -83,7 +75,7 @@
         const tg = window.Telegram.WebApp;
         tg.ready(); tg.expand();
 
-        // ⚠️ ВАЖНО: ЗАМЕНИ ЭТУ ССЫЛКУ НА ТУ, ЧТО СЕЙЧАС ГОРИТ В ТЕРМИНАЛЕ ТУННЕЛЯ!
+        // ⚠️ ВАЖНО: ЗАМЕНИ ЭТУ ССЫЛКУ НА СВОЮ АКТУАЛЬНУЮ ИЗ ОКНА ТЕРМИНАЛА!
         const API_URL = 'https://two-bottles-sort.loca.lt'; 
         
         const userId = tg.initDataUnsafe?.user?.id || 12345; 
@@ -93,9 +85,24 @@
         async function loadLot() {
             try {
                 const res = await fetch(`${API_URL}/api/lots`);
-                const data = await res.json();
+                if (!res.ok) throw new Error(`Сервер вернул ошибку со статусом ${res.status}`);
+                
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch(parseError) {
+                    if (text.includes("tunnel") || text.includes("Bypass") || text.includes("Click to Continue")) {
+                        throw new Error("Туннель заблокирован защитой LocalTunnel. Открой эту ссылку в обычном браузере на ПК и нажми синюю кнопку 'Click to Continue'!");
+                    }
+                    throw new Error("Сервер ответил не в формате JSON. Возможно, туннель упал или адрес указан неверно.");
+                }
+
                 currentLot = data[0];
-                if (!currentLot) return;
+                if (!currentLot) {
+                    document.getElementById('lot-title').innerText = "Лоты не найдены";
+                    return;
+                }
 
                 document.getElementById('lot-title').innerText = currentLot.title;
                 document.getElementById('lot-desc').innerText = currentLot.description;
@@ -131,7 +138,18 @@
                         document.getElementById('lot-timer').innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
                     }
                 }, 1000);
-            } catch(e) { console.log("Ошибка подключения к бэкенду."); }
+            } catch(e) { 
+                console.error(e);
+                document.getElementById('lot-title').innerText = "❌ Ошибка соединения!";
+                document.getElementById('lot-desc').innerHTML = `
+                    <div class="text-red-400 font-bold mb-3">${e.message}</div>
+                    <div class="text-xs text-gray-400 p-2 bg-gray-900 rounded border border-gray-700">
+                        <b>Адрес, прописанный в index.html:</b><br>
+                        <span class="text-yellow-400 font-mono block my-1">${API_URL}</span>
+                        Убедись, что эта ссылка один в один совпадает с той, которую выдал тебе терминал!
+                    </div>
+                `;
+            }
         }
 
         async function placeBid() {
@@ -145,18 +163,22 @@
         }
 
         async function sendBidRequest(amount) {
-            const res = await fetch(`${API_URL}/api/bid`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lotId: 1, userId, bidAmount: amount })
-            });
-            const data = await res.json();
-            if (data.error) {
-                alert(data.error);
-            } else {
-                alert('Ставка обработана!');
-                document.getElementById('bid-input').value = '';
-                loadLot();
+            try {
+                const res = await fetch(`${API_URL}/api/bid`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lotId: 1, userId, bidAmount: amount })
+                });
+                const data = await res.json();
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    alert('Ставка обработана!');
+                    document.getElementById('bid-input').value = '';
+                    loadLot();
+                }
+            } catch(err) {
+                alert("Ошибка отправки запроса: " + err.message);
             }
         }
 
@@ -164,30 +186,38 @@
             let maxLimit = parseInt(document.getElementById('auto-input').value);
             if (!maxLimit) return alert('Укажите максимальный лимит для автоторга');
 
-            const res = await fetch(`${API_URL}/api/set-autobid`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lotId: 1, userId, maxLimit })
-            });
-            const data = await res.json();
-            if (data.error) {
-                alert(data.error);
-            } else {
-                alert('Автоторг успешно активирован!');
-                document.getElementById('auto-input').value = '';
-                loadLot();
+            try {
+                const res = await fetch(`${API_URL}/api/set-autobid`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lotId: 1, userId, maxLimit })
+                });
+                const data = await res.json();
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    alert('Автоторг успешно активирован!');
+                    document.getElementById('auto-input').value = '';
+                    loadLot();
+                }
+            } catch(err) {
+                alert("Ошибка активации автоторга: " + err.message);
             }
         }
 
         async function payCommission() {
-            const res = await fetch(`${API_URL}/api/invoice`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lotId: 1, userId })
-            });
-            const data = await res.json();
-            if (data.invoiceLink) {
-                tg.openInvoice(data.invoiceLink, (status) => { if (status === 'paid') tg.close(); });
+            try {
+                const res = await fetch(`${API_URL}/api/invoice`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lotId: 1, userId })
+                });
+                const data = await res.json();
+                if (data.invoiceLink) {
+                    tg.openInvoice(data.invoiceLink, (status) => { if (status === 'paid') tg.close(); });
+                }
+            } catch(err) {
+                alert("Ошибка платежа: " + err.message);
             }
         }
         loadLot();
