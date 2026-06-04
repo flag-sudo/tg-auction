@@ -113,8 +113,8 @@
                     <div>
                         <h2 id="lot-title" class="text-lg font-black text-white leading-tight">...</h2>
                         <div class="mt-1.5 flex flex-wrap gap-1.5 text-[9px] font-mono text-gray-500">
-                            <div>Старт: <span id="lot-start-time" class="text-gray-400">...</span></div>
-                            <div>Конец: <span id="lot-end-time" class="text-yellow-600">...</span></div>
+                            <div>Start: <span id="lot-start-time" class="text-gray-400">...</span></div>
+                            <div>End: <span id="lot-end-time" class="text-yellow-600">...</span></div>
                         </div>
                     </div>
 
@@ -155,7 +155,7 @@
                         <button id="pay-btn" onclick="initiateStarsPayment()" class="w-full bg-blue-600 hover:bg-blue-700 font-black py-3 rounded-xl text-xs shadow-lg transition-all">🌟 Оплатить через Telegram Stars</button>
                         
                         <div id="seller-contacts" class="hidden bg-emerald-950/40 border border-emerald-500/40 p-3 rounded-xl text-left">
-                            <div class="text-xs text-emerald-400 font-bold mb-1">🤝 Транзакция защищена! Контакты открыты:</div>
+                            <div class="text-xs text-emerald-400 font-bold mb-1">🤝 Транзакция защищена! Contacts:</div>
                             <div class="text-sm font-mono font-bold text-white selection:bg-white selection:text-black">Продавец: <span id="seller-link">@...</span></div>
                         </div>
                     </div>
@@ -181,10 +181,8 @@
         const tg = window.Telegram?.WebApp;
         if (tg) { tg.ready(); tg.expand(); }
 
-        const API_URL = 'https://ea389680c379a7.lhr.lifee'; // ВСТАВЬ СЮДА СВОЙ АКТУАЛЬНЫЙ ТУННЕЛЬ LT
+        const API_URL = 'https://eb8dc77bcb19b7.lhr.life'; // ТВOЙ АКТУАЛЬНЫЙ ТУННЕЛЬ СLIENT-SIDE
 
-        // ГЕНИАЛЬНОЕ РЕШЕНИЕ БАГА СМЕШИВАНИЯ ДАННЫХ: 
-        // Если открыто вне Телеграма, генерируется жестко привязанный к вкладке уникальный ID вместо 12345
         let userId = tg?.initDataUnsafe?.user?.id || parseInt(localStorage.getItem('mock_secure_user_id'));
         if (!userId) {
             userId = Math.floor(Math.random() * 899999) + 100000;
@@ -195,6 +193,7 @@
         let activeLotId = null;
         let isCreating = false;
         let currentTab = 'active';
+        let timerInterval = null;
 
         // Обход прокси-заглушки localtunnel
         const originalFetch = window.fetch;
@@ -250,7 +249,6 @@
                 const container = document.getElementById('notification-center');
                 container.innerHTML = '';
                 
-                // Показываем последние 2 уведомления, чтобы не спамить экран
                 notifs.slice(0, 2).forEach(n => {
                     const box = document.createElement('div');
                     box.className = "bg-gradient-to-r from-blue-900/40 to-indigo-900/40 border border-blue-500/30 p-2.5 rounded-xl text-[11px] text-blue-200 shadow-md animate-pulse";
@@ -311,7 +309,8 @@
                     })
                 });
                 if(res.ok) { closeCreateScreen(); }
-            } catch (err) { alert('Ошибка соединения'); }
+                else { const errD = await res.json(); alert(`Ошибка: ${errD.error}`); }
+            } catch (err) { alert(`Ошибка соединения: ${err.message}`); }
         }
 
         async function loadMainScreen() {
@@ -325,11 +324,10 @@
                 let filtered = [];
                 const now = Date.now();
 
-                // Изолированная децентрализованная фильтрация лотов
                 if (currentTab === 'active') {
                     filtered = lots.filter(l => l.status === 'active' && now < l.endTime);
                 } else if (currentTab === 'my') {
-                    filtered = lots.filter(l => l.creatorId === userId); // ИСКЛЮЧИТЕЛЬНО МОИ
+                    filtered = lots.filter(l => l.creatorId === userId);
                 } else if (currentTab === 'won') {
                     filtered = lots.filter(l => l.winnerId === userId);
                 } else if (currentTab === 'fav') {
@@ -350,9 +348,9 @@
                     let badgeColor = "bg-black/70 text-yellow-400";
                     let statusText = "Идут торги";
 
-                    if (lot.status === 'bought') { badgeColor = "bg-amber-600 text-white"; statusText = "Куплен (Ждет оплаты)"; }
+                    if (lot.status === 'bought') { badgeColor = "bg-amber-600 text-white"; statusText = "Куплен"; }
                     else if (lot.status === 'paid') { badgeColor = "bg-emerald-600 text-white"; statusText = "Оплачен ⭐️"; }
-                    else if (lot.status === 'expired') { badgeColor = "bg-red-900/80 text-white"; statusText = "Без ставок 💨"; }
+                    else if (lot.status === 'expired') { badgeColor = "bg-red-900/80 text-white"; statusText = "Архив 💨"; }
 
                     const card = document.createElement('div');
                     card.className = "bg-gray-900 rounded-xl overflow-hidden border border-gray-800 p-2 flex flex-col justify-between active:scale-[0.98] transition-all cursor-pointer shadow-md";
@@ -382,15 +380,20 @@
             document.getElementById('detail-screen').classList.remove('hidden');
             updateFavBtnUi();
             loadLotDetail();
+            
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(loadLotDetail, 2000);
         }
 
         function backToMain() {
+            if (timerInterval) clearInterval(timerInterval);
             activeLotId = null;
             document.getElementById('detail-screen').classList.add('hidden');
             document.getElementById('main-screen').classList.remove('hidden');
             loadMainScreen();
         }
 
+        // --- ВОССТАНОВЛЕННАЯ ЛОГИКА ДЕТАЛЕЙ ЛОТА ---
         async function loadLotDetail() {
             if (activeLotId === null || isCreating) return;
             try {
@@ -401,98 +404,96 @@
                 document.getElementById('lot-title').innerText = lot.title;
                 document.getElementById('lot-desc').innerText = lot.description;
                 document.getElementById('lot-price').innerText = `${lot.currentBid} грн`;
-                document.getElementById('lot-blitz').innerText = `Блиц: ${lot.blitzPrice}`;
-                document.getElementById('lot-step').innerText = `Шаг: ${lot.minStep}`;
-                document.getElementById('lot-location').innerText = lot.location;
+                document.getElementById('lot-blitz').innerText = `Блиц: ${lot.blitzPrice} грн`;
+                document.getElementById('lot-step').innerText = `Шаг: ${lot.minStep} грн`;
                 document.getElementById('lot-img').src = lot.imageUrl;
-                document.getElementById('bid-input').placeholder = `>= ${lot.currentBid + lot.minStep}`;
-
+                document.getElementById('lot-location').innerText = lot.location;
                 document.getElementById('lot-start-time').innerText = formatDateTime(lot.startTime);
                 document.getElementById('lot-end-time').innerText = formatDateTime(lot.endTime);
+                document.getElementById('stars-fee').innerText = lot.commission || 0;
 
-                const isOwner = (lot.creatorId === userId);
+                // Расчет таймера обратного отсчета
+                const now = Date.now();
+                const timeLeft = lot.endTime - now;
+                const timerEl = document.getElementById('lot-timer');
                 
-                // Пересброс видимости зон управления
+                if (timeLeft > 0 && lot.status === 'active') {
+                    const hrs = Math.floor(timeLeft / (1000 * 60 * 60));
+                    const mins = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                    const secs = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                    timerEl.innerText = `${String(hrs).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+                    timerEl.className = "text-sm font-mono font-black text-red-400 bg-red-950/20 px-2 py-0.5 rounded border border-red-900/30 inline-block mt-1";
+                } else {
+                    timerEl.innerText = "Закрыт";
+                    timerEl.className = "text-sm font-mono font-black text-gray-500 bg-gray-950 px-2 py-0.5 rounded border border-gray-800 inline-block mt-1";
+                }
+
+                // Сброс видимости всех зон управления
                 document.getElementById('owner-warning').classList.add('hidden');
                 document.getElementById('action-zone').classList.add('hidden');
                 document.getElementById('pay-zone').classList.add('hidden');
                 document.getElementById('seller-wait-zone').classList.add('hidden');
                 document.getElementById('finished-zone').classList.add('hidden');
                 document.getElementById('no-bids-zone').classList.add('hidden');
+                document.getElementById('seller-contacts').classList.add('hidden');
 
-                if (isOwner) document.getElementById('owner-warning').classList.remove('hidden');
+                const isOwner = (lot.creatorId === userId);
 
-                const diff = lot.endTime - Date.now();
-
-                if (lot.status === 'active' && diff > 0) {
-                    document.getElementById('lot-timer').innerText = `${Math.floor(diff/60000)}м:${Math.floor((diff%60000)/1000)}с`;
-                    if (!isOwner) document.getElementById('action-zone').classList.remove('hidden');
+                if (isOwner) {
+                    document.getElementById('owner-warning').classList.remove('hidden');
+                    if (lot.status === 'bought') document.getElementById('seller-wait-zone').classList.remove('hidden');
+                    if (lot.status === 'paid') {
+                        document.getElementById('pay-zone').classList.remove('hidden');
+                        document.getElementById('seller-contacts').classList.remove('hidden');
+                        document.getElementById('seller-link').innerText = `@${lot.creatorUsername || 'Открыт в чате'}`;
+                    }
+                    if (lot.status === 'expired') document.getElementById('no-bids-zone').classList.remove('hidden');
                 } else {
-                    document.getElementById('lot-timer').innerText = "Завершен";
-                    
-                    if (lot.status === 'expired' || lot.winnerId === null) {
+                    // Логика для покупателя / гостя
+                    if (lot.status === 'active' && timeLeft > 0) {
+                        document.getElementById('action-zone').classList.remove('hidden');
+                    } else if (lot.status === 'bought' && lot.winnerId === userId) {
+                        document.getElementById('pay-zone').classList.remove('hidden');
+                    } else if (lot.status === 'paid' && lot.winnerId === userId) {
+                        document.getElementById('pay-zone').classList.remove('hidden');
+                        document.getElementById('seller-contacts').classList.remove('hidden');
+                        document.getElementById('seller-link').innerText = `@${lot.creatorUsername}`;
+                    } else if (lot.status === 'expired') {
                         document.getElementById('no-bids-zone').classList.remove('hidden');
-                    } else if (lot.status === 'bought' || lot.status === 'paid') {
-                        // Лот кем-то куплен
-                        if (isOwner) {
-                            // Логика Продавца
-                            if (lot.status === 'bought') {
-                                document.getElementById('seller-wait-zone').classList.remove('hidden'); // Блокировка связи
-                            } else {
-                                // Оплачено звездами — открываем чат/контакты покупателя!
-                                document.getElementById('pay-zone').classList.remove('hidden');
-                                document.getElementById('pay-btn').classList.add('hidden');
-                                document.getElementById('seller-contacts').classList.remove('hidden');
-                                document.getElementById('seller-link').innerText = `@Победитель_ID_${lot.winnerId}`;
-                            }
-                        } else if (lot.winnerId === userId) {
-                            // Логика Покупателя
-                            document.getElementById('pay-zone').classList.remove('hidden');
-                            document.getElementById('stars-fee').innerText = lot.commission;
-                            
-                            if (lot.status === 'paid') {
-                                document.getElementById('pay-btn').classList.add('hidden');
-                                document.getElementById('seller-contacts').classList.remove('hidden');
-                                document.getElementById('seller-link').innerText = lot.creatorUsername; // Открывается только после статуса paid
-                            } else {
-                                document.getElementById('pay-btn').classList.remove('hidden');
-                                document.getElementById('seller-contacts').classList.add('hidden');
-                            }
-                        } else {
-                            document.getElementById('finished-zone').classList.remove('hidden');
-                        }
+                    } else {
+                        document.getElementById('finished-zone').classList.remove('hidden');
                     }
                 }
-            } catch(e) {}
+            } catch (e) {}
         }
 
         async function placeBid() {
-            let amount = parseInt(document.getElementById('bid-input').value);
-            if (!amount) return alert('Укажите сумму!');
-            sendBidRequest(amount);
-        }
-
-        async function placeBlitzBid() {
-            if (confirm("Выкупить вещь немедленно?")) sendBidRequest(9999999);
-        }
-
-        async function sendBidRequest(amount) {
+            const amount = Number(document.getElementById('bid-input').value);
+            if (!amount) return alert('Введите сумму ставки!');
             try {
                 const res = await fetch(`${API_URL}/api/bid`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ lotId: activeLotId, userId, username: userUsername, bidAmount: amount })
                 });
-                const data = await res.json();
-                if (data.error) return alert(data.error);
-
-                confetti({ particleCount: 60, spread: 40, origin: { y: 0.8 } });
-                document.getElementById('bid-input').value = '';
-                loadLotDetail();
-            } catch(err) { alert("Ошибка шлюза ставок"); }
+                if (res.ok) { loadLotDetail(); document.getElementById('bid-input').value = ''; } 
+                else { const errD = await res.json(); alert(errD.error); }
+            } catch(e) { alert('Ошибка отправки ставки'); }
         }
 
-        // --- ИНТЕГРАЦИЯ ТРАНЗАКЦИЙ TELEGRAM STARS ---
+        async function placeBlitzBid() {
+            if (!confirm('Вы уверены, что хотите моментально выкупить лот по Блиц-цене?')) return;
+            try {
+                const res = await fetch(`${API_URL}/api/bid`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lotId: activeLotId, userId, username: userUsername, bidAmount: 9999999 })
+                });
+                if (res.ok) { loadLotDetail(); } 
+                else { const errD = await res.json(); alert(errD.error); }
+            } catch(e) { alert('Ошибка блиц-выкупа'); }
+        }
+
         async function initiateStarsPayment() {
             try {
                 const res = await fetch(`${API_URL}/api/create-stars-invoice`, {
@@ -500,28 +501,25 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ lotId: activeLotId, userId })
                 });
+                if (!res.ok) return alert('Не удалось сгенерировать инвойс');
                 const data = await res.json();
-                
-                if (data.error) return alert(data.error);
 
-                if (data.mode === "production" && data.invoiceLink) {
-                    // НАПРАВЛЕНИЕ ЗАПРОСА В КЛИЕНТ ТЕЛЕГРАМА НА РЕАЛЬНОЕ СПИСАНИЕ ЗВЕЗД
+                if (data.mode === 'simulation') {
+                    alert(`[СИМУЛЯЦИЯ] Демо-платформа одобрила перевод ${data.stars} ⭐️. Переходим к верификации!`);
+                    await confirmBackendPayment();
+                } else if (data.mode === 'production' && data.invoiceLink) {
                     tg.openInvoice(data.invoiceLink, async function(status) {
-                        if (status === 'paid' || status === 'successful') {
-                            confirmPaymentOnServer();
+                        if (status === 'paid' || status === 'confirmed') {
+                            await confirmBackendPayment();
                         } else {
-                            alert('Оплата Telegram Stars отклонена юзером');
+                            alert('Оплата звезд отклонена пользователем.');
                         }
                     });
-                } else if (data.mode === "simulation") {
-                    // Автоматический тестовый режим, если BOT_TOKEN не привязан к серверу
-                    alert(`[ТЕСТ-РЕЖИМ]: Симуляция списания ${data.stars} звезд прошла успешно.`);
-                    confirmPaymentOnServer();
                 }
-            } catch (e) { alert("Не удалось запустить модуль платежа"); }
+            } catch(e) { alert('Ошибка шлюза платежей'); }
         }
 
-        async function confirmPaymentOnServer() {
+        async function confirmBackendPayment() {
             try {
                 const res = await fetch(`${API_URL}/api/webhook-payment-confirm`, {
                     method: 'POST',
@@ -529,18 +527,16 @@
                     body: JSON.stringify({ lotId: activeLotId, userId })
                 });
                 if (res.ok) {
-                    confetti({ particleCount: 140, scalar: 1.2 });
+                    if (typeof confetti === 'function') confetti();
                     loadLotDetail();
                 }
-            } catch(e) { alert("Ошибка верификации транзакции"); }
+            } catch(e) { alert('Ошибка подтверждения платежа сервером'); }
         }
 
-        // Высокочастотный пуллинг обновлений для децентрализованного интерфейса (раз в 2.5 сек)
-        setInterval(loadMainScreen, 2500);
-        setInterval(loadLotDetail, 2500);
-        setInterval(updateNotifications, 2500);
-        
+        // Глобальный цикл синхронизации
         loadMainScreen();
+        setInterval(loadMainScreen, 4000);
+        setInterval(updateNotifications, 4000);
     </script>
 </body>
 </html>
