@@ -15,10 +15,69 @@
     <div class="max-w-md mx-auto pb-6">
         
         <div id="main-screen">
-            <h1 class="text-2xl font-bold text-center text-yellow-500 mb-4">🔨 Активные Аукционы</h1>
+            <h1 class="text-2xl font-bold text-center text-yellow-500 mb-2">🔨 Активные Аукционы</h1>
             
-            <div id="lots-grid" class="grid grid-cols-2 gap-3">
+            <button onclick="openCreateScreen()" class="w-full mb-4 bg-gradient-to-r from-yellow-500 to-amber-600 text-gray-900 font-extrabold py-3 rounded-xl text-sm shadow-lg active:scale-98 transition-all flex items-center justify-center gap-1.5">
+                ➕ Выставить свой лот
+            </button>
+            
+            <div id="lots-grid" class="grid grid-cols-2 gap-3"></div>
+        </div>
+
+        <div id="create-screen" class="hidden">
+            <button onclick="closeCreateScreen()" class="mb-4 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium py-2 px-4 rounded-xl text-xs border border-gray-700 active:scale-95 transition-all">
+                ⬅ Отмена
+            </button>
+            
+            <div class="bg-gray-800 rounded-2xl border border-gray-700 shadow-2xl p-4 space-y-4">
+                <h2 class="text-xl font-bold text-yellow-500 border-b border-gray-700 pb-2">New Auction Item</h2>
+                
+                <div>
+                    <label class="text-xs text-gray-400 font-semibold uppercase block mb-1">Название лота *</label>
+                    <input type="text" id="c-title" class="w-full bg-gray-900 border border-gray-600 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm text-white outline-none" placeholder="Например: Нож ручной работы">
                 </div>
+
+                <div>
+                    <label class="text-xs text-gray-400 font-semibold uppercase block mb-1">Описание лота</label>
+                    <textarea id="c-desc" rows="3" class="w-full bg-gray-900 border border-gray-600 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm text-white outline-none resize-none" placeholder="Опишите состояние, комплектацию..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs text-gray-400 font-semibold uppercase block mb-1">Нач. Ставка (грн) *</label>
+                        <input type="number" id="c-price" class="w-full bg-gray-900 border border-gray-600 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm text-white outline-none" placeholder="100">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 font-semibold uppercase block mb-1">Мин. Шаг (грн) *</label>
+                        <input type="number" id="c-step" class="w-full bg-gray-900 border border-gray-600 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm text-white outline-none" placeholder="20">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs text-gray-400 font-semibold uppercase block mb-1">Блиц-цена (грн) *</label>
+                        <input type="number" id="c-blitz" class="w-full bg-gray-900 border border-gray-600 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm text-white outline-none" placeholder="1000">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 font-semibold uppercase block mb-1">Время (в часах)</label>
+                        <input type="number" id="c-duration" class="w-full bg-gray-900 border border-gray-600 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm text-white outline-none" value="2">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs text-gray-400 font-semibold uppercase block mb-1">Местоположение</label>
+                    <input type="text" id="c-location" class="w-full bg-gray-900 border border-gray-600 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm text-white outline-none" placeholder="Город, Область">
+                </div>
+
+                <div>
+                    <label class="text-xs text-gray-400 font-semibold uppercase block mb-1">Ссылка на фото лота</label>
+                    <input type="url" id="c-img" class="w-full bg-gray-900 border border-gray-600 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm text-white outline-none" placeholder="https://image-link.com/photo.jpg">
+                </div>
+
+                <button onclick="submitNewLot()" class="w-full bg-yellow-500 text-gray-900 font-extrabold py-3 rounded-xl text-sm tracking-wide active:scale-[0.97] transition-all hover:bg-yellow-600 mt-2">
+                    🚀 Опубликовать лот
+                </button>
+            </div>
         </div>
 
         <div id="detail-screen" class="hidden">
@@ -97,14 +156,11 @@
         const tg = window.Telegram?.WebApp;
         if (tg) { tg.ready(); tg.expand(); }
 
-        // ==========================================
-        // ⚠️ ВСТАВЬ СЮДА СВОЙ АДРЕС SSH ТУННЕЛЯ!
-        // ==========================================
-        const API_URL = 'https://913d861eb16a38.lhr.life'; 
+        const API_URL = 'https://f88009653e8b5f.lhr.life'; 
 
         const userId = tg?.initDataUnsafe?.user?.id || 12345; 
         let activeLotId = null;
-        let updateInterval = null;
+        let isCreating = false; // Маркер нахождения на экране создания лота
 
         // Обход напоминания локалтаннеля
         const originalFetch = window.fetch;
@@ -120,9 +176,66 @@
             return originalFetch(resource, config);
         };
 
+        // Логика переключения на создание лота
+        function openCreateScreen() {
+            isCreating = true;
+            document.getElementById('main-screen').classList.add('hidden');
+            document.getElementById('create-screen').classList.remove('hidden');
+        }
+
+        function closeCreateScreen() {
+            isCreating = false;
+            document.getElementById('create-screen').classList.add('hidden');
+            document.getElementById('main-screen').classList.remove('hidden');
+            loadMainScreen();
+        }
+
+        // Отправка нового лота на сервер
+        async function submitNewLot() {
+            const title = document.getElementById('c-title').value;
+            const description = document.getElementById('c-desc').value;
+            const currentBid = document.getElementById('c-price').value;
+            const minStep = document.getElementById('c-step').value;
+            const blitzPrice = document.getElementById('c-blitz').value;
+            const durationHours = document.getElementById('c-duration').value;
+            const location = document.getElementById('c-location').value;
+            const imageUrl = document.getElementById('c-img').value;
+
+            if (!title || !currentBid || !blitzPrice || !minStep) {
+                return alert('Заполните обязательные поля, помеченные звездочкой (*) !');
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/api/lots`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, description, currentBid, blitzPrice, minStep, location, imageUrl, durationHours })
+                });
+                const data = await res.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    alert('Лот успешно добавлен и выставлен на торги!');
+                    // Сброс полей
+                    document.getElementById('c-title').value = '';
+                    document.getElementById('c-desc').value = '';
+                    document.getElementById('c-price').value = '';
+                    document.getElementById('c-step').value = '';
+                    document.getElementById('c-blitz').value = '';
+                    document.getElementById('c-location').value = '';
+                    document.getElementById('c-img').value = '';
+                    
+                    closeCreateScreen();
+                }
+            } catch (err) {
+                alert('Ошибка создания лота: ' + err.message);
+            }
+        }
+
         // Загрузка главного экрана (список лотов)
         async function loadMainScreen() {
-            if (activeLotId !== null) return; // Если мы просматриваем конкретный лот, сетку не обновляем
+            if (activeLotId !== null || isCreating) return; 
             try {
                 const res = await fetch(`${API_URL}/api/lots`);
                 const lots = await res.json();
@@ -132,7 +245,7 @@
                 lots.forEach(lot => {
                     const timeLeft = Math.max(0, lot.endTime - Date.now());
                     const mins = Math.floor(timeLeft / 60000);
-                    const timerText = timeLeft <= 0 ? "Завершен" : `${mins} мин`;
+                    const timerText = timeLeft <= 0 || lot.status === 'finished' ? "Завершен" : `${mins} мин`;
 
                     const card = document.createElement('div');
                     card.className = "bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-lg flex flex-col justify-between active:scale-98 transition-all cursor-pointer p-2";
@@ -176,7 +289,7 @@
 
         // Загрузка информации об одном лоте
         async function loadLotDetail() {
-            if (activeLotId === null) return;
+            if (activeLotId === null || isCreating) return;
             try {
                 const res = await fetch(`${API_URL}/api/lots/${activeLotId}`);
                 if (!res.ok) throw new Error("Не удалось загрузить лот");
@@ -193,7 +306,6 @@
 
                 document.getElementById('bid-input').placeholder = `>= ${lot.currentBid + lot.minStep}`;
 
-                // Статус автоторга
                 const statusAuto = document.getElementById('my-auto-status');
                 if (lot.autoBids && lot.autoBids[userId]) {
                     statusAuto.innerText = `Лимит: ${lot.autoBids[userId]} грн`;
@@ -203,7 +315,6 @@
                     statusAuto.className = "text-[11px] text-gray-500 font-mono";
                 }
 
-                // Таймер и завершение
                 const diff = lot.endTime - Date.now();
                 if (diff <= 0 || lot.status === 'finished') {
                     document.getElementById('lot-timer').innerText = "Завершен";
@@ -232,7 +343,7 @@
 
         async function placeBlitzBid() {
             let confirmBlitz = confirm("Вы уверены, что хотите купить лот по Блиц-цене?");
-            if (confirmBlitz) sendBidRequest(99999); // Сервер сам поймет и приравняет к блицу
+            if (confirmBlitz) sendBidRequest(9999999); 
         }
 
         async function sendBidRequest(amount) {
@@ -274,7 +385,7 @@
             } catch(err) { alert("Ошибка автоторга: " + err.message); }
         }
 
-        // Запуск циклов обновления
+        // Запуск циклов автоматического обновления
         setInterval(loadMainScreen, 3000);
         setInterval(loadLotDetail, 3000);
         loadMainScreen();
