@@ -157,15 +157,15 @@
         if (tg) { tg.ready(); tg.expand(); }
 
         // ==========================================
-        // ⚠️ ВАЖНО: ВСТАВЬ СЮДА СВОЮ АКТУАЛЬНУЮ ССЫЛКУ ИЗ КОНСОЛИ
+        // ⚠️ ВАЖНО: Проверь, совпадает ли ссылка с туннелем в консоли!
         // ==========================================
-        const API_URL = 'https://429917fac19f56.lhr.life'; 
+        const API_URL = 'https://99f7ef9c71297e.lhr.life'; 
 
         const userId = tg?.initDataUnsafe?.user?.id || 12345; 
         let activeLotId = null;
         let isCreating = false; 
 
-        // Обход напоминания локалтаннеля
+        // Обход начального окна напоминания localtunnel
         const originalFetch = window.fetch;
         window.fetch = async function(...args) {
             let [resource, config] = args;
@@ -192,7 +192,7 @@
             loadMainScreen();
         }
 
-        // Отправка нового лота на сервер с перехватом HTML ошибок
+        // Отправка нового лота
         async function submitNewLot() {
             const title = document.getElementById('c-title').value;
             const description = document.getElementById('c-desc').value;
@@ -256,7 +256,7 @@
             }
         }
 
-        // Загрузка списка лотов с безопасным парсингом
+        // Загрузка сетки активных лотов
         async function loadMainScreen() {
             if (activeLotId !== null || isCreating) return; 
             const targetUrl = `${API_URL}/api/lots`;
@@ -268,7 +268,7 @@
                 try {
                     lots = JSON.parse(responseText);
                 } catch (jsonError) {
-                    console.error("Критическая ошибка: Главный экран получил HTML вместо JSON лотов.");
+                    console.error("Главный экран получил HTML код вместо JSON.");
                     return;
                 }
 
@@ -318,7 +318,7 @@
             loadMainScreen();
         }
 
-        // Загрузка детальной информации с выводом HTML-ошибки в блок на экране
+        // Загрузка детальной информации об одном лоте
         async function loadLotDetail() {
             if (activeLotId === null || isCreating) return;
             const targetUrl = `${API_URL}/api/lots/${activeLotId}`;
@@ -334,7 +334,7 @@
                 } catch (jsonError) {
                     document.getElementById('error-block').classList.remove('hidden');
                     document.getElementById('error-message').innerText = 
-                        `⚠️ Сервер вернул страницу ошибки вместо данных лота!\n\nВызывался: ${targetUrl}\n\nОтвет сервера:\n${responseText.substring(0, 200)}`;
+                        `⚠️ Сервер вернул ошибку вместо данных лота!\n\nАдрес: ${targetUrl}\n\nОтвет сервера:\n${responseText.substring(0, 200)}`;
                     return;
                 }
 
@@ -389,6 +389,7 @@
             if (confirmBlitz) sendBidRequest(9999999); 
         }
 
+        // Отправка ставки на бэкенд
         async function sendBidRequest(amount) {
             const targetUrl = `${API_URL}/api/bid`;
             try {
@@ -403,7 +404,7 @@
                 try {
                     data = JSON.parse(responseText);
                 } catch (jsonError) {
-                    alert(`⚠️ Не удалось сделать ставку.\nСервер ответил кодом ошибки вместо JSON.\n\nПервые 150 символов:\n${responseText.substring(0, 150)}`);
+                    alert(`⚠️ Не удалось сделать ставку.\nСервер прислал ошибку.\n\nОтвет:\n${responseText.substring(0, 150)}`);
                     return;
                 }
 
@@ -419,6 +420,7 @@
             }
         }
 
+        // Активация автоторга
         async function setupAutoBid() {
             let maxLimit = parseInt(document.getElementById('auto-input').value);
             if (!maxLimit) return alert('Укажите лимит автоторга');
@@ -435,7 +437,7 @@
                 try {
                     data = JSON.parse(responseText);
                 } catch (jsonError) {
-                    alert(`⚠️ Не удалось включить автоторг.\nСервер прислал ошибку.\n\nОтвет:\n${responseText.substring(0, 150)}`);
+                    alert(`⚠️ Не удалось включить автоторг.\n\nОтвет:\n${responseText.substring(0, 150)}`);
                     return;
                 }
 
@@ -448,6 +450,7 @@
             } catch(err) { alert("Ошибка автоторга: " + err.message); }
         }
 
+        // Постоянное автообновление данных (каждые 3 секунды)
         setInterval(loadMainScreen, 3000);
         setInterval(loadLotDetail, 3000);
         loadMainScreen();
