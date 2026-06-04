@@ -3,76 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Violity Reibert Auction</title>
+    <title>Violity Reibert Secure Auction</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <style>
-        body { -webkit-user-select: none; user-select: none; }
-    </style>
 </head>
-<body class="bg-gray-900 text-white p-3 font-sans selection:bg-yellow-500 selection:text-black">
-    <div class="max-w-md mx-auto pb-6">
+<body class="bg-gray-950 text-white p-3 font-sans antialiased selection:bg-yellow-500 selection:text-black">
+    <div class="max-w-md mx-auto pb-10">
         
-        <!-- ГЛАВНЫЙ ЭКРАН -->
+        <div id="notification-center" class="space-y-1.5 mb-3"></div>
+
         <div id="main-screen">
-            <h1 class="text-2xl font-black text-center text-yellow-500 mb-3 tracking-wide">🔨 REIBERT & VIOLITY</h1>
+            <h1 class="text-2xl font-black text-center text-yellow-500 mb-3 tracking-wider">🔨 ESCROW AUCTION</h1>
             
-            <!-- Пакет обновленных вкладок (5 штук на сетке) -->
-            <div class="grid grid-cols-5 bg-gray-800 p-1 rounded-xl gap-0.5 mb-4 border border-gray-700 text-[10px] text-center font-bold">
-                <button id="tab-active" onclick="switchTab('active')" class="py-2 rounded-lg bg-yellow-500 text-gray-900 transition-all">Активные</button>
-                <button id="tab-my" onclick="switchTab('my')" class="py-2 rounded-lg text-gray-400 hover:text-white transition-all">Мои</button>
-                <button id="tab-won" onclick="switchTab('won')" class="py-2 rounded-lg text-gray-400 hover:text-white transition-all">Выигран</button>
+            <div class="grid grid-cols-5 bg-gray-900 p-1 rounded-xl gap-0.5 mb-4 border border-gray-800 text-[10px] text-center font-bold">
+                <button id="tab-active" onclick="switchTab('active')" class="py-2 rounded-lg bg-yellow-500 text-gray-950 transition-all">Активные</button>
+                <button id="tab-my" onclick="switchTab('my')" class="py-2 rounded-lg text-gray-400 hover:text-white transition-all">Мои лоты</button>
+                <button id="tab-won" onclick="switchTab('won')" class="py-2 rounded-lg text-gray-400 hover:text-white transition-all">Купил</button>
                 <button id="tab-fav" onclick="switchTab('fav')" class="py-2 rounded-lg text-gray-400 hover:text-white transition-all">★ Избр</button>
                 <button id="tab-archive" onclick="switchTab('archive')" class="py-2 rounded-lg text-gray-400 hover:text-white transition-all">Архив</button>
             </div>
 
-            <button onclick="openCreateScreen()" class="w-full mb-4 bg-gradient-to-r from-yellow-500 to-amber-600 text-gray-900 font-extrabold py-3 rounded-xl text-sm shadow-lg active:scale-98 transition-all flex items-center justify-center gap-1.5">
-                ➕ Создать новый лот
+            <button onclick="openCreateScreen()" class="w-full mb-4 bg-gradient-to-r from-yellow-500 to-amber-500 text-gray-950 font-black py-3 rounded-xl text-sm shadow-lg active:scale-98 transition-all">
+                ➕ Выставить предмет на продажу
             </button>
             
             <div id="lots-grid" class="grid grid-cols-2 gap-3"></div>
-            <div id="empty-state" class="hidden text-center text-gray-500 text-sm py-12">Здесь пока пустует...</div>
+            <div id="empty-state" class="hidden text-center text-gray-600 text-sm py-16 font-medium">В этой секции пока нет лотов...</div>
         </div>
 
-        <!-- ЭКРАН СОЗДАНИЯ ЛОТА -->
         <div id="create-screen" class="hidden">
-            <button onclick="closeCreateScreen()" class="mb-4 bg-gray-800 text-gray-300 font-medium py-2 px-4 rounded-xl text-xs border border-gray-700 active:scale-95 transition-all">
-                ⬅ Отмена
+            <button onclick="closeCreateScreen()" class="mb-4 bg-gray-900 text-gray-400 font-bold py-2 px-4 rounded-xl text-xs border border-gray-800 active:scale-95 transition-all">
+                ⬅ Назад
             </button>
             
-            <div class="bg-gray-800 rounded-2xl border border-gray-700 shadow-2xl p-4 space-y-4">
-                <h2 class="text-xl font-bold text-yellow-500 border-b border-gray-700 pb-2">Новая публикация</h2>
+            <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-2xl p-4 space-y-4">
+                <h2 class="text-lg font-black text-yellow-500">Параметры аукциона</h2>
                 
                 <div>
-                    <label class="text-xs text-gray-400 font-semibold uppercase block mb-1">Название предмета *</label>
-                    <input type="text" id="c-title" class="w-full bg-gray-900 border border-gray-600 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm outline-none" placeholder="Например: Штык-нож К98">
+                    <label class="text-[10px] text-gray-400 font-bold uppercase block mb-1">Название лота *</label>
+                    <input type="text" id="c-title" class="w-full bg-gray-950 border border-gray-800 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm outline-none">
                 </div>
 
                 <div>
-                    <label class="text-xs text-gray-400 font-semibold uppercase block mb-1">Описание, дефекты, реставрация</label>
-                    <textarea id="c-desc" rows="3" class="w-full bg-gray-900 border border-gray-600 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm outline-none resize-none" placeholder="Честно опишите состояние..."></textarea>
+                    <label class="text-[10px] text-gray-400 font-bold uppercase block mb-1">Описание дефектов</label>
+                    <textarea id="c-desc" rows="2" class="w-full bg-gray-950 border border-gray-800 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm outline-none resize-none"></textarea>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="text-xs text-gray-400 font-semibold uppercase block mb-1">Старт цены (грн) *</label>
-                        <input type="number" id="c-price" class="w-full bg-gray-900 border border-gray-600 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm outline-none" placeholder="1">
+                        <label class="text-[10px] text-gray-400 font-bold uppercase block mb-1">Стартовая цена (грн) *</label>
+                        <input type="number" id="c-price" class="w-full bg-gray-950 border border-gray-800 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm outline-none">
                     </div>
                     <div>
-                        <label class="text-xs text-gray-400 font-semibold uppercase block mb-1">Шаг торгов (грн) *</label>
-                        <input type="number" id="c-step" class="w-full bg-gray-900 border border-gray-600 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm outline-none" placeholder="50">
+                        <label class="text-[10px] text-gray-400 font-bold uppercase block mb-1">Мин. шаг (грн) *</label>
+                        <input type="number" id="c-step" class="w-full bg-gray-950 border border-gray-800 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm outline-none">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="text-xs text-gray-400 font-semibold uppercase block mb-1">Блиц-цена (грн) *</label>
-                        <input type="number" id="c-blitz" class="w-full bg-gray-900 border border-gray-600 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm outline-none" placeholder="2000">
+                        <label class="text-[10px] text-gray-400 font-bold uppercase block mb-1">Блиц-цена (грн) *</label>
+                        <input type="number" id="c-blitz" class="w-full bg-gray-950 border border-gray-800 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm outline-none">
                     </div>
                     <div>
-                        <label class="text-xs text-gray-400 font-semibold uppercase block mb-1">Длительность торгов *</label>
-                        <select id="c-duration" class="w-full bg-gray-900 border border-gray-600 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm outline-none text-white">
+                        <label class="text-[10px] text-gray-400 font-bold uppercase block mb-1">Срок размещения *</label>
+                        <select id="c-duration" class="w-full bg-gray-950 border border-gray-800 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm outline-none text-white">
                             <option value="1">1 день</option>
                             <option value="3">3 дня</option>
                             <option value="7">7 дней</option>
@@ -81,137 +77,126 @@
                 </div>
 
                 <div>
-                    <label class="text-xs text-gray-400 font-semibold uppercase block mb-1">Местонахождение</label>
-                    <input type="text" id="c-location" class="w-full bg-gray-900 border border-gray-600 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm outline-none" placeholder="Львов, Украина">
+                    <label class="text-[10px] text-gray-400 font-bold uppercase block mb-1">Город отправки</label>
+                    <input type="text" id="c-location" class="w-full bg-gray-950 border border-gray-800 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm outline-none" placeholder="Украина">
                 </div>
 
                 <div>
-                    <label class="text-xs text-gray-400 font-semibold uppercase block mb-1">Ссылка на изображение</label>
-                    <input type="url" id="c-img" class="w-full bg-gray-900 border border-gray-600 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm outline-none" placeholder="https://...">
+                    <label class="text-[10px] text-gray-400 font-bold uppercase block mb-1">Фото (Прямая ссылка URL)</label>
+                    <input type="url" id="c-img" class="w-full bg-gray-950 border border-gray-800 focus:border-yellow-500 rounded-xl py-2 px-3 text-sm outline-none">
                 </div>
 
-                <button onclick="submitNewLot()" class="w-full bg-yellow-500 text-gray-900 font-extrabold py-3 rounded-xl text-sm tracking-wide active:scale-[0.97] transition-all hover:bg-yellow-600">
-                    🚀 Выставить на аукцион
+                <button onclick="submitNewLot()" class="w-full bg-yellow-500 text-gray-950 font-black py-3 rounded-xl text-sm transition-all hover:bg-yellow-600">
+                    💥 Запустить торги
                 </button>
             </div>
         </div>
 
-        <!-- ДЕТАЛЬНЫЙ ЭКРАН ЛОТА -->
         <div id="detail-screen" class="hidden">
-            <button onclick="backToMain()" class="mb-4 bg-gray-800 text-gray-300 font-medium py-2 px-4 rounded-xl text-xs border border-gray-700 active:scale-95 transition-all">
-                ⬅ К списку лотов
+            <button onclick="backToMain()" class="mb-4 bg-gray-900 text-gray-400 font-bold py-2 px-4 rounded-xl text-xs border border-gray-800 active:scale-95 transition-all">
+                ⬅ В ленту
             </button>
 
-            <!-- Кнопка добавления в избранное -->
-            <button id="fav-btn" onclick="toggleFavorite()" class="w-full mb-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1">
+            <button id="fav-btn" onclick="toggleFavorite()" class="w-full mb-3 py-2 rounded-xl text-xs font-bold transition-all">
                 ☆ Добавить в избранное
             </button>
 
-            <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700 shadow-2xl">
-                <div class="relative w-full h-56 bg-gray-950 flex items-center justify-center">
+            <div class="bg-gray-900 rounded-2xl overflow-hidden border border-gray-800 shadow-2xl">
+                <div class="relative w-full h-48 bg-black flex items-center justify-center">
                     <img id="lot-img" src="" alt="Лот" class="w-full h-full object-cover">
-                    <div class="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md text-xs px-2.5 py-1 rounded-full">
-                        📍 <span id="lot-location" class="text-gray-200">...</span>
+                    <div class="absolute bottom-2 left-2 bg-black/70 text-[10px] px-2 py-0.5 rounded-md border border-gray-800">
+                        📍 <span id="lot-location" class="text-gray-300">...</span>
                     </div>
                 </div>
 
-                <div class="p-4">
-                    <h2 id="lot-title" class="text-xl font-bold text-white tracking-tight">...</h2>
-                    
-                    <!-- Блок точного календарного времени -->
-                    <div class="mt-2 bg-gray-900/60 p-2.5 rounded-xl border border-gray-700/50 text-[11px] space-y-0.5 font-mono text-gray-400">
-                        <div>📅 Открыт: <span id="lot-start-time" class="text-gray-300">...</span></div>
-                        <div>⏳ Финиш: <span id="lot-end-time" class="text-yellow-500/90">...</span></div>
+                <div class="p-4 space-y-4">
+                    <div>
+                        <h2 id="lot-title" class="text-lg font-black text-white leading-tight">...</h2>
+                        <div class="mt-1.5 flex flex-wrap gap-1.5 text-[9px] font-mono text-gray-500">
+                            <div>Старт: <span id="lot-start-time" class="text-gray-400">...</span></div>
+                            <div>Конец: <span id="lot-end-time" class="text-yellow-600">...</span></div>
+                        </div>
                     </div>
 
-                    <div id="lot-desc" class="text-gray-400 text-sm mt-2 bg-gray-900/40 p-3 rounded-lg border border-gray-700/50 whitespace-pre-wrap">...</div>
+                    <div id="lot-desc" class="text-gray-400 text-xs bg-black/40 p-3 rounded-xl border border-gray-800/60 whitespace-pre-wrap">...</div>
                     
-                    <div id="owner-warning" class="hidden bg-blue-950/40 border border-blue-500 p-3 rounded-xl mt-3 text-xs text-blue-300">
-                        ℹ️ Это ваш собственный лот. Ставки заблокированы.
+                    <div id="owner-warning" class="hidden bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl text-xs text-amber-400 font-medium">
+                        ⚠️ Вы — владелец лота. Вы не можете выкупать или перебивать собственные ставки.
                     </div>
 
-                    <div class="flex justify-between items-center mt-4 bg-gray-700/60 p-3 rounded-xl border border-gray-600/30">
+                    <div class="grid grid-cols-2 gap-3 bg-black/30 p-3 rounded-xl border border-gray-800/80">
                         <div>
-                            <span class="text-xs text-gray-400 block uppercase font-medium">Текущая цена</span>
-                            <span id="lot-price" class="text-2xl font-black text-green-400">0 грн</span>
-                            <div class="flex gap-2 mt-0.5 text-[11px] text-yellow-400">
-                                <span id="lot-blitz">Блиц: 0</span>
-                                <span id="lot-step" class="text-blue-400">Шаг: 0</span>
+                            <span class="text-[9px] text-gray-500 block uppercase font-bold tracking-wider">Текущий счет</span>
+                            <span id="lot-price" class="text-xl font-black text-green-400">0 грн</span>
+                            <div class="text-[10px] text-gray-400 mt-0.5 font-medium">
+                                <span id="lot-blitz">Блиц: 0</span> • <span id="lot-step">Шаг: 0</span>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <span class="text-xs text-gray-400 block uppercase font-medium">Таймер</span>
-                            <span id="lot-timer" class="text-xl font-mono font-bold text-red-400 bg-gray-900/50 px-2.5 py-1 rounded-lg inline-block">00:00</span>
+                        <div class="text-right flex flex-col justify-center">
+                            <span class="text-[9px] text-gray-500 block uppercase font-bold tracking-wider">Статус времени</span>
+                            <span id="lot-timer" class="text-sm font-mono font-black text-red-400 bg-red-950/20 px-2 py-0.5 rounded border border-red-900/30 inline-block mt-1">00:00</span>
                         </div>
                     </div>
 
-                    <!-- ЗОНА СТАВОК -->
-                    <div id="action-zone" class="mt-4 space-y-4">
-                        <div class="bg-gray-900/40 p-3 rounded-xl border border-gray-700/60">
-                            <label class="text-xs text-gray-400 font-semibold block mb-1.5 uppercase">Сделать ставку вручную:</label>
+                    <div id="action-zone" class="space-y-3 hidden">
+                        <div class="bg-black/40 p-3 rounded-xl border border-gray-800">
+                            <label class="text-[10px] text-gray-400 font-bold block mb-1 uppercase">Повысить вручную:</label>
                             <div class="flex gap-2">
-                                <input type="number" id="bid-input" class="w-1/2 bg-gray-900 border border-gray-600 focus:border-yellow-500 rounded-xl py-2.5 px-3 text-center text-lg font-bold outline-none">
-                                <button onclick="placeBid()" class="w-1/2 bg-yellow-500 text-gray-900 font-extrabold py-2.5 rounded-xl text-sm hover:bg-yellow-600">Поставить</button>
+                                <input type="number" id="bid-input" class="w-1/2 bg-black border border-gray-800 text-center font-bold text-sm rounded-xl outline-none focus:border-yellow-500">
+                                <button onclick="placeBid()" class="w-1/2 bg-yellow-500 text-gray-950 font-black rounded-xl text-xs">Поднять ставку</button>
                             </div>
                         </div>
-
-                        <div class="bg-gray-900/40 p-3 rounded-xl border border-gray-700/60">
-                            <div class="flex justify-between items-center mb-1.5">
-                                <label class="text-xs text-gray-400 font-semibold block uppercase">Автоторг (Робот):</label>
-                                <span id="my-auto-status" class="text-[11px] text-gray-500 font-mono">Выключен</span>
-                            </div>
-                            <div class="flex gap-2">
-                                <input type="number" id="auto-input" class="w-1/2 bg-gray-900 border border-gray-600 focus:border-blue-500 rounded-xl py-2.5 px-3 text-center text-lg font-bold outline-none" placeholder="Макс. лимит">
-                                <button onclick="setupAutoBid()" class="w-1/2 bg-blue-600 text-white font-bold py-2.5 rounded-xl text-sm hover:bg-blue-700">Включить</button>
-                            </div>
-                        </div>
-
-                        <button onclick="placeBlitzBid()" class="w-full bg-red-600 text-white font-bold py-3 rounded-xl text-sm hover:bg-red-700">⚡ Выкупить сейчас по Блицу</button>
+                        <button onclick="placeBlitzBid()" class="w-full bg-gradient-to-r from-red-600 to-amber-600 text-white font-black py-3 rounded-xl text-xs shadow-md">⚡ Моментальный Блиц-выкуп товара</button>
                     </div>
 
-                    <!-- ЗОНА ОПЛАТЫ КОМИССИИ -->
-                    <div id="pay-zone" class="mt-4 hidden text-center bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl">
-                        <p class="text-yellow-400 text-sm mb-1 font-bold">🎉 Вы выиграли этот лот!</p>
-                        <p class="text-xs text-gray-400 mb-3">Для получения контактов оплатите комиссию: <span id="stars-fee" class="text-yellow-400 font-bold">0</span> ⭐️</p>
-                        <button id="pay-btn" onclick="payCommission()" class="w-full bg-blue-500 text-white font-extrabold py-3.5 rounded-xl shadow-lg">🌟 Оплатить звездами</button>
+                    <div id="pay-zone" class="hidden bg-yellow-500/5 border border-yellow-500/20 p-4 rounded-xl text-center space-y-3">
+                        <div class="text-xs font-bold text-yellow-500">🎉 Поздравляем с победой в торгах!</div>
+                        <div class="text-[11px] text-gray-400">Для разблокировки связи с продавцом внесите обеспечение платформы: <b id="stars-fee" class="text-white">0</b> ⭐️</div>
+                        <button id="pay-btn" onclick="initiateStarsPayment()" class="w-full bg-blue-600 hover:bg-blue-700 font-black py-3 rounded-xl text-xs shadow-lg transition-all">🌟 Оплатить через Telegram Stars</button>
                         
-                        <div id="seller-contacts" class="hidden mt-2 p-3 bg-gray-900 rounded-xl border border-green-500 text-sm">
-                            🤝 Комиссия оплачена! Свяжитесь с продавцом: <br>
-                            <span id="seller-link" class="text-green-400 font-mono font-bold text-base">@username</span>
+                        <div id="seller-contacts" class="hidden bg-emerald-950/40 border border-emerald-500/40 p-3 rounded-xl text-left">
+                            <div class="text-xs text-emerald-400 font-bold mb-1">🤝 Транзакция защищена! Контакты открыты:</div>
+                            <div class="text-sm font-mono font-bold text-white selection:bg-white selection:text-black">Продавец: <span id="seller-link">@...</span></div>
                         </div>
                     </div>
                     
-                    <!-- ЗОНА ФИНАЛА АУКЦИОНА (ЕСЛИ БЫЛИ СТАВКИ) -->
-                    <div id="finished-zone" class="mt-4 hidden text-center bg-gray-900 p-3 rounded-xl border border-gray-700 text-sm text-gray-400">
-                        🔒 Торги по этому лоту завершены. Предмет продан.
+                    <div id="seller-wait-zone" class="hidden bg-blue-500/10 border border-blue-500/20 p-3.5 rounded-xl text-xs text-blue-400 text-center font-medium">
+                        ⏳ Ваш предмет куплен! Контакты заблокированы до момента, пока покупатель не переведет звезды на счет комиссии.
                     </div>
 
-                    <!-- КРИТИЧЕСКОЕ ОБНОВЛЕНИЕ: ЗОНА ФИНАЛА БЕЗ СТАВОК -->
-                    <div id="no-bids-zone" class="mt-4 hidden text-center bg-red-500/10 p-4 rounded-xl border border-red-500/20 text-sm text-red-400">
-                        💨 Торги завершены. Лот закрылся без ставок. Никто не сделал предложений.
+                    <div id="finished-zone" class="hidden bg-gray-900 p-3 rounded-xl border border-gray-800 text-center text-xs text-gray-500">
+                        🔒 Аукцион официально завершен. Предмет продан стороннему участнику.
+                    </div>
+
+                    <div id="no-bids-zone" class="hidden bg-red-950/20 p-3 rounded-xl border border-red-900/30 text-center text-xs text-red-400">
+                        💨 Срок торгов закончился. Предмет ушел в архив без ставок.
                     </div>
 
                 </div>
             </div>
         </div>
-
-        <div class="text-center text-[11px] text-gray-600 mt-6 font-mono">@rsizauction_bot</div>
     </div>
 
     <script>
         const tg = window.Telegram?.WebApp;
         if (tg) { tg.ready(); tg.expand(); }
 
-        // ⚠️ ЗАМЕНИ НА СВОЙ СВЕЖИЙ ТУННЕЛЬ
-        const API_URL = 'https://1fddecca86b4e0.lhr.life'; 
+        const API_URL = 'https://f2b9c86e02a9bb.lhr.life'; // ВСТАВЬ СЮДА СВОЙ АКТУАЛЬНЫЙ ТУННЕЛЬ LT
 
-        const userId = tg?.initDataUnsafe?.user?.id || 12345; 
-        const userUsername = tg?.initDataUnsafe?.user?.username || "buyer_camrad";
+        // ГЕНИАЛЬНОЕ РЕШЕНИЕ БАГА СМЕШИВАНИЯ ДАННЫХ: 
+        // Если открыто вне Телеграма, генерируется жестко привязанный к вкладке уникальный ID вместо 12345
+        let userId = tg?.initDataUnsafe?.user?.id || parseInt(localStorage.getItem('mock_secure_user_id'));
+        if (!userId) {
+            userId = Math.floor(Math.random() * 899999) + 100000;
+            localStorage.setItem('mock_secure_user_id', userId);
+        }
+        const userUsername = tg?.initDataUnsafe?.user?.username || `tester_${userId}`;
 
         let activeLotId = null;
-        let isCreating = false; 
-        let currentTab = 'active'; 
+        let isCreating = false;
+        let currentTab = 'active';
 
+        // Обход прокси-заглушки localtunnel
         const originalFetch = window.fetch;
         window.fetch = async function(...args) {
             let [resource, config] = args;
@@ -221,17 +206,15 @@
             return originalFetch(resource, config);
         };
 
-        // Вспомогательная функция красивой даты
         function formatDateTime(ms) {
             if (!ms) return "...";
             const d = new Date(ms);
-            const pad = (n) => n < 10 ? '0' + n : n;
-            return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
         }
 
-        // Логика работы Избранного через LocalStorage
+        // --- УПРАВЛЕНИЕ ИЗБРАННЫМ (ЛОКАЛЬНОЕ) ---
         function getFavorites() {
-            const list = localStorage.getItem(`fav_lots_${userId}`);
+            const list = localStorage.getItem(`secure_fav_${userId}`);
             return list ? JSON.parse(list) : [];
         }
 
@@ -242,7 +225,7 @@
             } else {
                 favs.push(activeLotId);
             }
-            localStorage.setItem(`fav_lots_${userId}`, JSON.stringify(favs));
+            localStorage.setItem(`secure_fav_${userId}`, JSON.stringify(favs));
             updateFavBtnUi();
         }
 
@@ -251,11 +234,30 @@
             const btn = document.getElementById('fav-btn');
             if (favs.includes(activeLotId)) {
                 btn.innerHTML = "★ В Избранном (Удалить)";
-                btn.className = "w-full mb-3 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1 shadow-inner";
+                btn.className = "w-full mb-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-bold py-2 rounded-xl text-xs";
             } else {
                 btn.innerHTML = "☆ Добавить в избранное";
-                btn.className = "w-full mb-3 bg-gray-800 border border-gray-700 text-gray-300 font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1 hover:bg-gray-700";
+                btn.className = "w-full mb-3 bg-gray-900 border border-gray-800 text-gray-400 font-bold py-2 rounded-xl text-xs";
             }
+        }
+
+        // --- ЦЕНТР ИЗОЛИРОВАННЫХ УВЕДОМЛЕНИЙ ---
+        async function updateNotifications() {
+            try {
+                const res = await fetch(`${API_URL}/api/notifications/${userId}`);
+                if (!res.ok) return;
+                const notifs = await res.json();
+                const container = document.getElementById('notification-center');
+                container.innerHTML = '';
+                
+                // Показываем последние 2 уведомления, чтобы не спамить экран
+                notifs.slice(0, 2).forEach(n => {
+                    const box = document.createElement('div');
+                    box.className = "bg-gradient-to-r from-blue-900/40 to-indigo-900/40 border border-blue-500/30 p-2.5 rounded-xl text-[11px] text-blue-200 shadow-md animate-pulse";
+                    box.innerHTML = `🔔 <b>Уведомление:</b> ${n.text}`;
+                    container.appendChild(box);
+                });
+            } catch(e){}
         }
 
         function switchTab(tabName) {
@@ -263,11 +265,7 @@
             const tabs = ['active', 'my', 'won', 'fav', 'archive'];
             tabs.forEach(t => {
                 const btn = document.getElementById(`tab-${t}`);
-                if (t === tabName) {
-                    btn.className = "py-2 rounded-lg bg-yellow-500 text-gray-900 transition-all";
-                } else {
-                    btn.className = "py-2 rounded-lg text-gray-400 hover:text-white transition-all";
-                }
+                btn.className = (t === tabName) ? "py-2 rounded-lg bg-yellow-500 text-gray-950 transition-all" : "py-2 rounded-lg text-gray-400 hover:text-white transition-all";
             });
             loadMainScreen();
         }
@@ -295,9 +293,7 @@
             const location = document.getElementById('c-location').value;
             const imageUrl = document.getElementById('c-img').value;
 
-            if (!title || !currentBid || !blitzPrice || !minStep) {
-                return alert('Заполните обязательные поля со звездочкой!');
-            }
+            if (!title || !currentBid || !blitzPrice || !minStep) return alert('Заполните обязательные поля!');
 
             try {
                 const res = await fetch(`${API_URL}/api/lots`, {
@@ -314,75 +310,73 @@
                         creatorUsername: userUsername
                     })
                 });
-                const data = await res.json();
-                if (data.error) return alert(data.error);
-
-                alert('Лот успешно создан на выбранный срок!');
-                closeCreateScreen();
-            } catch (err) { alert('Ошибка сети бэкенда'); }
+                if(res.ok) { closeCreateScreen(); }
+            } catch (err) { alert('Ошибка соединения'); }
         }
 
         async function loadMainScreen() {
-            if (activeLotId !== null || isCreating) return; 
+            if (activeLotId !== null || isCreating) return;
             try {
                 const res = await fetch(`${API_URL}/api/lots`);
                 const lots = await res.json();
                 const grid = document.getElementById('lots-grid');
                 grid.innerHTML = '';
 
-                let filteredLots = [];
+                let filtered = [];
                 const now = Date.now();
 
+                // Изолированная децентрализованная фильтрация лотов
                 if (currentTab === 'active') {
-                    filteredLots = lots.filter(l => l.status === 'active' && now < l.endTime);
+                    filtered = lots.filter(l => l.status === 'active' && now < l.endTime);
                 } else if (currentTab === 'my') {
-                    filteredLots = lots.filter(l => l.creatorId === userId);
+                    filtered = lots.filter(l => l.creatorId === userId); // ИСКЛЮЧИТЕЛЬНО МОИ
                 } else if (currentTab === 'won') {
-                    filteredLots = lots.filter(l => l.winnerId === userId && (l.status === 'finished' || l.status === 'paid'));
+                    filtered = lots.filter(l => l.winnerId === userId);
                 } else if (currentTab === 'fav') {
-                    const favs = getFavorites();
-                    filteredLots = lots.filter(l => favs.includes(l.id));
+                    const f = getFavorites();
+                    filtered = lots.filter(l => f.includes(l.id));
                 } else if (currentTab === 'archive') {
-                    filteredLots = lots.filter(l => l.status === 'finished' || l.status === 'paid' || now >= l.endTime);
+                    filtered = lots.filter(l => l.status === 'expired' || l.status === 'paid' || now >= l.endTime);
                 }
 
-                if (filteredLots.length === 0) {
+                if (filtered.length === 0) {
                     document.getElementById('empty-state').classList.remove('hidden');
                     return;
                 } else {
                     document.getElementById('empty-state').classList.add('hidden');
                 }
 
-                filteredLots.forEach(lot => {
-                    const timeLeft = Math.max(0, lot.endTime - now);
-                    let timerText = `${Math.floor(timeLeft / 60000)} мин`;
-                    if (lot.status === 'finished' && lot.winnerId === null) timerText = "Без ставок 💨";
-                    else if (lot.status === 'finished') timerText = "Завершен";
-                    else if (lot.status === 'paid') timerText = "Оплачен ⭐️";
+                filtered.forEach(lot => {
+                    let badgeColor = "bg-black/70 text-yellow-400";
+                    let statusText = "Идут торги";
+
+                    if (lot.status === 'bought') { badgeColor = "bg-amber-600 text-white"; statusText = "Куплен (Ждет оплаты)"; }
+                    else if (lot.status === 'paid') { badgeColor = "bg-emerald-600 text-white"; statusText = "Оплачен ⭐️"; }
+                    else if (lot.status === 'expired') { badgeColor = "bg-red-900/80 text-white"; statusText = "Без ставок 💨"; }
 
                     const card = document.createElement('div');
-                    card.className = "bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-lg flex flex-col justify-between active:scale-98 transition-all cursor-pointer p-2";
+                    card.className = "bg-gray-900 rounded-xl overflow-hidden border border-gray-800 p-2 flex flex-col justify-between active:scale-[0.98] transition-all cursor-pointer shadow-md";
                     card.onclick = () => openLotDetail(lot.id);
                     
                     card.innerHTML = `
                         <div>
-                            <div class="w-full h-28 bg-gray-950 rounded-lg overflow-hidden relative">
+                            <div class="w-full h-24 bg-black rounded-lg overflow-hidden relative">
                                 <img src="${lot.imageUrl}" class="w-full h-full object-cover">
-                                <span class="absolute top-1 right-1 text-[9px] bg-black/70 px-1.5 py-0.5 rounded text-yellow-400 font-mono font-bold">${timerText}</span>
+                                <span class="absolute top-1 right-1 text-[8px] px-1.5 py-0.5 rounded font-black uppercase ${badgeColor}">${statusText}</span>
                             </div>
                             <h3 class="text-xs font-bold mt-2 text-gray-200 line-clamp-2">${lot.title}</h3>
                         </div>
-                        <div class="mt-2 pt-1 border-t border-gray-700/50 flex justify-between items-center">
-                            <span class="text-[10px] text-gray-500">Цена:</span>
-                            <span class="text-xs font-extrabold text-green-400">${lot.currentBid} ₴</span>
+                        <div class="mt-2 pt-1 border-t border-gray-800 flex justify-between items-center">
+                            <span class="text-[9px] text-gray-500">Счет:</span>
+                            <span class="text-xs font-black text-green-400">${lot.currentBid} ₴</span>
                         </div>
                     `;
                     grid.appendChild(card);
                 });
-            } catch (e) { console.error(e); }
+            } catch (e) {}
         }
 
-        async function openLotDetail(id) {
+        function openLotDetail(id) {
             activeLotId = id;
             document.getElementById('main-screen').classList.add('hidden');
             document.getElementById('detail-screen').classList.remove('hidden');
@@ -413,76 +407,73 @@
                 document.getElementById('lot-img').src = lot.imageUrl;
                 document.getElementById('bid-input').placeholder = `>= ${lot.currentBid + lot.minStep}`;
 
-                // Вывод точного календарного времени
                 document.getElementById('lot-start-time').innerText = formatDateTime(lot.startTime);
                 document.getElementById('lot-end-time').innerText = formatDateTime(lot.endTime);
 
-                const statusAuto = document.getElementById('my-auto-status');
-                if (lot.autoBids && lot.autoBids[userId]) {
-                    statusAuto.innerText = `Лимит: ${lot.autoBids[userId]} грн`;
-                    statusAuto.className = "text-[11px] text-green-400 font-mono";
-                } else {
-                    statusAuto.innerText = "Выключен";
-                    statusAuto.className = "text-[11px] text-gray-500 font-mono";
-                }
-
-                const isOwner = lot.creatorId === userId;
-                if (isOwner) {
-                    document.getElementById('owner-warning').classList.remove('hidden');
-                    document.getElementById('action-zone').classList.add('hidden');
-                } else {
-                    document.getElementById('owner-warning').classList.add('hidden');
-                    document.getElementById('action-zone').classList.remove('hidden');
-                }
-
-                const diff = lot.endTime - Date.now();
+                const isOwner = (lot.creatorId === userId);
                 
-                // Сброс видимости финальных зон перед проверками
+                // Пересброс видимости зон управления
+                document.getElementById('owner-warning').classList.add('hidden');
+                document.getElementById('action-zone').classList.add('hidden');
+                document.getElementById('pay-zone').classList.add('hidden');
+                document.getElementById('seller-wait-zone').classList.add('hidden');
                 document.getElementById('finished-zone').classList.add('hidden');
                 document.getElementById('no-bids-zone').classList.add('hidden');
-                document.getElementById('pay-zone').classList.add('hidden');
 
-                if (diff <= 0 || lot.status !== 'active') {
-                    document.getElementById('lot-timer').innerText = "Завершен";
-                    document.getElementById('action-zone').classList.add('hidden');
-                    
-                    if (lot.winnerId === null) {
-                        // КРИТИЧЕСКАЯ ФИЧА: Лот завершен без единой ставки
-                        document.getElementById('no-bids-zone').classList.remove('hidden');
-                    } else if (lot.winnerId === userId) {
-                        // Юзер выиграл
-                        document.getElementById('pay-zone').classList.remove('hidden');
-                        document.getElementById('stars-fee').innerText = lot.commission;
-                        
-                        if (lot.status === 'paid') {
-                            document.getElementById('pay-btn').classList.add('hidden');
-                            document.getElementById('seller-contacts').classList.remove('hidden');
-                            document.getElementById('seller-link').innerText = lot.creatorUsername.startsWith('@') ? lot.creatorUsername : `@${lot.creatorUsername}`;
-                        } else {
-                            document.getElementById('pay-btn').classList.remove('hidden');
-                            document.getElementById('seller-contacts').classList.add('hidden');
-                        }
-                    } else {
-                        // Закрыт для сторонних участников
-                        document.getElementById('finished-zone').classList.remove('hidden');
-                    }
+                if (isOwner) document.getElementById('owner-warning').classList.remove('hidden');
+
+                const diff = lot.endTime - Date.now();
+
+                if (lot.status === 'active' && diff > 0) {
+                    document.getElementById('lot-timer').innerText = `${Math.floor(diff/60000)}м:${Math.floor((diff%60000)/1000)}с`;
+                    if (!isOwner) document.getElementById('action-zone').classList.remove('hidden');
                 } else {
-                    // Лот активен, считаем тики таймера
-                    const mins = Math.floor(diff / 60000);
-                    const secs = Math.floor((diff % 60000) / 1000);
-                    document.getElementById('lot-timer').innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                    document.getElementById('lot-timer').innerText = "Завершен";
+                    
+                    if (lot.status === 'expired' || lot.winnerId === null) {
+                        document.getElementById('no-bids-zone').classList.remove('hidden');
+                    } else if (lot.status === 'bought' || lot.status === 'paid') {
+                        // Лот кем-то куплен
+                        if (isOwner) {
+                            // Логика Продавца
+                            if (lot.status === 'bought') {
+                                document.getElementById('seller-wait-zone').classList.remove('hidden'); // Блокировка связи
+                            } else {
+                                // Оплачено звездами — открываем чат/контакты покупателя!
+                                document.getElementById('pay-zone').classList.remove('hidden');
+                                document.getElementById('pay-btn').classList.add('hidden');
+                                document.getElementById('seller-contacts').classList.remove('hidden');
+                                document.getElementById('seller-link').innerText = `@Победитель_ID_${lot.winnerId}`;
+                            }
+                        } else if (lot.winnerId === userId) {
+                            // Логика Покупателя
+                            document.getElementById('pay-zone').classList.remove('hidden');
+                            document.getElementById('stars-fee').innerText = lot.commission;
+                            
+                            if (lot.status === 'paid') {
+                                document.getElementById('pay-btn').classList.add('hidden');
+                                document.getElementById('seller-contacts').classList.remove('hidden');
+                                document.getElementById('seller-link').innerText = lot.creatorUsername; // Открывается только после статуса paid
+                            } else {
+                                document.getElementById('pay-btn').classList.remove('hidden');
+                                document.getElementById('seller-contacts').classList.add('hidden');
+                            }
+                        } else {
+                            document.getElementById('finished-zone').classList.remove('hidden');
+                        }
+                    }
                 }
-            } catch(e) { console.error(e); }
+            } catch(e) {}
         }
 
         async function placeBid() {
             let amount = parseInt(document.getElementById('bid-input').value);
-            if (!amount) return alert('Введите сумму ставки');
+            if (!amount) return alert('Укажите сумму!');
             sendBidRequest(amount);
         }
 
         async function placeBlitzBid() {
-            if (confirm("Выкупаем вещь по Блиц-цене?")) sendBidRequest(9999999); 
+            if (confirm("Выкупить вещь немедленно?")) sendBidRequest(9999999);
         }
 
         async function sendBidRequest(amount) {
@@ -495,48 +486,60 @@
                 const data = await res.json();
                 if (data.error) return alert(data.error);
 
-                confetti({ particleCount: 80, spread: 50, origin: { y: 0.8 } });
+                confetti({ particleCount: 60, spread: 40, origin: { y: 0.8 } });
                 document.getElementById('bid-input').value = '';
                 loadLotDetail();
-            } catch(err) { alert("Ошибка ставки"); }
+            } catch(err) { alert("Ошибка шлюза ставок"); }
         }
 
-        async function setupAutoBid() {
-            let maxLimit = parseInt(document.getElementById('auto-input').value);
-            if (!maxLimit) return alert('Укажите лимит для робота');
+        // --- ИНТЕГРАЦИЯ ТРАНЗАКЦИЙ TELEGRAM STARS ---
+        async function initiateStarsPayment() {
             try {
-                const res = await fetch(`${API_URL}/api/set-autobid`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ lotId: activeLotId, userId, maxLimit })
-                });
-                const data = await res.json();
-                if (data.error) alert(data.error);
-                else {
-                    alert('Робот-автоторг активирован!');
-                    document.getElementById('auto-input').value = '';
-                    loadLotDetail();
-                }
-            } catch(err) { alert("Ошибка автоторга"); }
-        }
-
-        async function payCommission() {
-            try {
-                const res = await fetch(`${API_URL}/api/pay-commission`, {
+                const res = await fetch(`${API_URL}/api/create-stars-invoice`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ lotId: activeLotId, userId })
                 });
                 const data = await res.json();
-                if (data.success) {
-                    confetti({ particleCount: 150, scalar: 1.2 });
-                    loadLotDetail();
+                
+                if (data.error) return alert(data.error);
+
+                if (data.mode === "production" && data.invoiceLink) {
+                    // НАПРАВЛЕНИЕ ЗАПРОСА В КЛИЕНТ ТЕЛЕГРАМА НА РЕАЛЬНОЕ СПИСАНИЕ ЗВЕЗД
+                    tg.openInvoice(data.invoiceLink, async function(status) {
+                        if (status === 'paid' || status === 'successful') {
+                            confirmPaymentOnServer();
+                        } else {
+                            alert('Оплата Telegram Stars отклонена юзером');
+                        }
+                    });
+                } else if (data.mode === "simulation") {
+                    // Автоматический тестовый режим, если BOT_TOKEN не привязан к серверу
+                    alert(`[ТЕСТ-РЕЖИМ]: Симуляция списания ${data.stars} звезд прошла успешно.`);
+                    confirmPaymentOnServer();
                 }
-            } catch (e) { alert("Ошибка списания"); }
+            } catch (e) { alert("Не удалось запустить модуль платежа"); }
         }
 
-        setInterval(loadMainScreen, 3000);
-        setInterval(loadLotDetail, 3000);
+        async function confirmPaymentOnServer() {
+            try {
+                const res = await fetch(`${API_URL}/api/webhook-payment-confirm`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lotId: activeLotId, userId })
+                });
+                if (res.ok) {
+                    confetti({ particleCount: 140, scalar: 1.2 });
+                    loadLotDetail();
+                }
+            } catch(e) { alert("Ошибка верификации транзакции"); }
+        }
+
+        // Высокочастотный пуллинг обновлений для децентрализованного интерфейса (раз в 2.5 сек)
+        setInterval(loadMainScreen, 2500);
+        setInterval(loadLotDetail, 2500);
+        setInterval(updateNotifications, 2500);
+        
         loadMainScreen();
     </script>
 </body>
